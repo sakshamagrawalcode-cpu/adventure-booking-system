@@ -23,6 +23,6 @@ Seat counts update automatically on every booking and cancellation.
 ```
 problem-statement.md          the problem, in plain words
 docs/use-case-diagram.puml    use case diagram (PlantUML source)
-docs/use-case-diagram.png     the rendered diagram
+docs/use-case-diagram.jpeg     the rendered diagram
 docs/use-cases.md             three full use case specifications
 ```
