@@ -1,7 +1,7 @@
 # Noun–Verb Analysis — Adventure Booking System
 
 **Team ID:** _[37]_
-Saksam (20251501153) . Prerna (20251501135) · Naitik (20251501133) · Kush (20251501176) · Abhay (2025102033)
+Saksham (20251501153) . Prerna (20251501135) · Naitik (20251501133) · Kush (20251501176) · Abhay (2025102033)
 
 Taken from our three use cases: Book Adventure, Cancel Booking, Manage Trips.
 
