@@ -1,72 +1,89 @@
-# Class Design and Responsibilities
+# CRC Cards — Adventure Booking System
+
+**Team ID:** 37
+Saksham (20251501153) · Prerna (20251501135) · Naitik (20251501133) · Kush (20251501176) · Abhay (2025102033)
+
+---
 
 ## 1. Class: User
+
 | Responsibilities | Collaborators |
 | :--- | :--- |
 | 1. Store basic credentials (userId, name, email, password) | — |
 | 2. Authenticate user during login | — |
-| 3. Update profile and contact details | — |
+| 3. Update profile details | — |
 
 ## 2. Class: Traveler
+
 | Responsibilities | Collaborators |
 | :--- | :--- |
-| 1. Maintain emergency contact and medical/fitness details | — |
-| 2. Search and browse available trips | Trip |
-| 3. Initiate booking and trigger payment process | Booking, Payment |
-| 4. View personal booking history and status | Booking |
+| 1. Browse the list of available trips | Trip |
+| 2. Initiate a booking and trigger the payment process | Booking, Payment |
+| 3. Cancel an existing booking | Booking |
+| 4. View own booking history and status | Booking |
 
 ## 3. Class: AdventureProvider
+
 | Responsibilities | Collaborators |
 | :--- | :--- |
-| 1. Maintain agency license and certification details | — |
-| 2. Create, update, and publish adventure trip packages | Trip |
-| 3. View bookings and passenger manifests for hosted trip | Booking, Trip |
+| 1. Create, update, and publish adventure trips | Trip |
+| 2. Remove a trip that is no longer offered | Trip |
+| 3. View the bookings made on hosted trips | Booking, Trip |
 
 ## 4. Class: Admin
+
 | Responsibilities | Collaborators |
 | :--- | :--- |
-| 1. Review and approve adventure providers and trips | AdventureProvider, Trip |
-| 2. Monitor overall system users and active bookings | User, Booking |
-| 3. Track platform commissions and overall revenue | Payment |
+| 1. View and manage all user accounts | User |
+| 2. View and manage all trips in the system | Trip |
+| 3. View and manage all bookings, including pending refunds | Booking, Payment |
 
 ## 5. Class: Trip
+
 | Responsibilities | Collaborators |
 | :--- | :--- |
-| 1. Store trip details (title, location, price, dates, maxCapacity) | AdventureProvider |
-| 2. Calculate and update remaining available slots | Booking |
-| 3. Enforce participant requirements (minimum age, gear, fitness level) | Traveler |
+| 1. Store trip details (title, location, price, date, totalSeats) | AdventureProvider |
+| 2. Track and update the number of seats remaining | Booking |
+| 3. Validate its own details (future date, price above zero, seats above zero) | — |
+| 4. Block its own removal while confirmed bookings exist | Booking |
 
 ## 6. Class: Booking
+
 | Responsibilities | Collaborators |
 | :--- | :--- |
-| 1. Maintain reservation lifecycle status (PENDING, CONFIRMED, CANCELLED) | — |
-| 2. Calculate total cost (Trip.price × number of participants) | Trip |
-| 3. Reserve or release trip slots based on payment outcome | Trip |
-| 4. Generate booking confirmation and itinerary summary | Traveler, Payment |
+| 1. Maintain reservation status (CONFIRMED, CANCELLED) | — |
+| 2. Calculate total cost (Trip.price × number of seats) | Trip |
+| 3. Reserve or release trip seats based on payment outcome | Trip |
+| 4. Trigger the confirmation email after booking or cancellation | Traveler, Payment |
 
 ## 7. Class: Payment
+
 | Responsibilities | Collaborators |
 | :--- | :--- |
 | 1. Store transaction details (paymentId, amount, status, timestamp) | Booking |
-| 2. Initiate and verify transaction requests with the payment processor | PaymentGateway |
-| 3. Process refund requests upon booking cancellation | PaymentGateway, Booking |
+| 2. Initiate and verify a transaction through the gateway | PaymentGateway |
+| 3. Process a refund when a booking is cancelled | PaymentGateway, Booking |
 
 ## 8. Class: PaymentGateway
+
 | Responsibilities | Collaborators |
 | :--- | :--- |
-| 1. Connect to external banking and card/UPI processing networks | — |
-| 2. Validate payment credentials and authorize fund transfer | Payment |
-| 3. Return transaction status (SUCCESS / FAILED) | Payment |
+| 1. Validate the payment details it is given | Payment |
+| 2. Simulate the processing of a payment or a refund | Payment |
+| 3. Return the transaction status (SUCCESS / FAILED) | Payment |
 
 ---
 
-## Note on Inheritance & Design Rationale
+## Why User is the parent class
 
-### 1. Inheritance Hierarchy (Who is the parent?)
-*   **Parent Class (Base):** User
-*   **Child Classes (Derived):** Traveler, AdventureProvider, and Admin
+Traveler, AdventureProvider and Admin all need the same four things — a name, an email, a password, and a way to log in. Writing those three times would be pointless repetition, so we put them once in a `User` class and let the other three inherit from it.
 
-### 2. Why is User Designed as the Parent Class?
-*   **Avoids Code Redundancy (DRY Principle):** All three user roles share core account properties (e.g., name, email, password, authentication logic). Grouping these common properties inside the User class prevents duplicating identical fields across multiple classes.
-*   **Unified Authentication:** The security and login service can process credentials polymorphically for any actor simply as an instance of User.
-*   **System Extensibility:** If new roles are added later (e.g., TourGuide, SafetyAuditor), they can extend User directly without modifying the existing authentication architecture.
+This also means the login code does not care who is logging in. It just gets a User and checks the password.
+
+And if we ever add a new kind of user later, say a guide, it can inherit from User too and login will already work for it.
+
+## Why PaymentGateway does not talk to a real bank
+
+Our PaymentGateway is a fake one. It takes the payment details, checks them, and sends back either SUCCESS or FAILED.
+
+We did this on purpose. The whole app works from start to finish without depending on any outside service, so nothing can break during the demo. It also lets us make a payment fail whenever we want, which is useful when we test what happens on a failed booking.
