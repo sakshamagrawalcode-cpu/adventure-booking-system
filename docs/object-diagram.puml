@@ -1,0 +1,93 @@
+@startuml object-diagram
+' Adventure Booking System — Object Diagram
+' Team ID: 37
+' Saksham 20251501153 | Prerna 20251501135 | Naitik 20251501133
+' Kush 20251501176 | Abhay 2025102033
+'
+' SCENARIO: Rohan books 2 seats on the River Rafting trip listed
+' by provider Meera, and the payment succeeds.
+' Every value below matches docs/class-diagram.puml.
+
+skinparam shadowing false
+skinparam object {
+  BackgroundColor #FDFDFD
+  BorderColor #2C3E50
+  ArrowColor #2C3E50
+}
+
+title Object Diagram — "Rohan books the River Rafting trip"
+
+object "meera : AdventureProvider" as provider1 {
+  userId = "U-104"
+  name = "Meera Singh"
+  email = "meera@naturetreks.in"
+  password = "********"
+}
+
+object "rafting1 : Trip" as trip1 {
+  tripId = "TRP-021"
+  title = "River Rafting - Rishikesh"
+  location = "Rishikesh, Uttarakhand"
+  date = 2026-09-20
+  price = 1500.00
+  totalSeats = 10
+  seatsLeft = 8
+}
+
+object "rohan : Traveler" as traveler1 {
+  userId = "U-208"
+  name = "Rohan Verma"
+  email = "rohan.verma@gmail.com"
+  password = "********"
+}
+
+object "bk3305 : Booking" as booking1 {
+  bookingId = "BK-3305"
+  bookingDate = 2026-09-10
+  seatsBooked = 2
+  totalCost = 3000.00
+  status = CONFIRMED
+}
+
+object "pay8821 : Payment" as payment1 {
+  paymentId = "PAY-8821"
+  amount = 3000.00
+  status = SUCCESS
+  timestamp = 2026-09-10 11:15
+}
+
+object "gateway1 : PaymentGateway" as gateway1 {
+  gatewayName = "SimulatedGateway"
+}
+
+' ---------------------------- LINKS -------------------------------
+' Links are single instances of the associations in the class diagram.
+' Object diagrams carry no multiplicities.
+
+provider1 -- trip1    : lists
+traveler1 -- booking1 : makes
+trip1     -- booking1 : has
+booking1  *-- payment1 : paid by
+payment1  ..> gateway1 : uses
+
+' --------------------------- NOTES --------------------------------
+
+note right of trip1
+  **Seat math:**
+  seatsLeft = totalSeats - seats already booked
+  8 = 10 - 2
+end note
+
+note bottom of booking1
+  **Cost math:**
+  totalCost = Trip.price x seatsBooked
+  3000.00 = 1500.00 x 2
+end note
+
+note right of payment1
+  Payment status is SUCCESS, so the
+  booking status is CONFIRMED and the
+  2 seats are already subtracted above.
+end note
+
+@enduml
