@@ -1,0 +1,122 @@
+@startuml class-diagram
+' Adventure Booking System — Domain Class Diagram
+' Team ID: 37
+' Saksham 20251501153 | Prerna 20251501135 | Naitik 20251501133
+' Kush 20251501176 | Abhay 2025102033
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+abstract class User {
+  - userId : String
+  - name : String
+  - email : String
+  - password : String
+  --
+  + login(email : String, password : String) : boolean
+  + logout() : void
+  + updateProfile(name : String, email : String) : void
+  # validatePassword(raw : String) : boolean
+  + {abstract} getRole() : String
+}
+
+class Traveler {
+  --
+  + bookTrip(t : Trip, seats : int) : Booking
+  + cancelBooking(b : Booking) : void
+  + viewMyBookings() : List<Booking>
+  + getRole() : String
+}
+
+class AdventureProvider {
+  --
+  + createTrip(title : String, location : String, date : Date, price : double, seats : int) : Trip
+  + editTrip(t : Trip) : void
+  + publishTrip(t : Trip) : void
+  + removeTrip(t : Trip) : void
+  + viewTripBookings(t : Trip) : List<Booking>
+  + getRole() : String
+}
+
+class Admin {
+  --
+  + viewAllUsers() : List<User>
+  + viewAllBookings() : List<Booking>
+  + removeTrip(t : Trip) : void
+  + settlePendingRefund(p : Payment) : void
+  + getRole() : String
+}
+
+class Trip {
+  - tripId : String
+  - title : String
+  - location : String
+  - date : Date
+  - price : double
+  - totalSeats : int
+  - seatsLeft : int
+  --
+  + getSeatsLeft() : int
+  + reserveSeats(count : int) : boolean
+  + releaseSeats(count : int) : void
+  + validateDetails() : boolean
+  + canBeRemoved() : boolean
+  - hasCapacityFor(count : int) : boolean
+}
+
+class Booking {
+  - bookingId : String
+  - bookingDate : Date
+  - seatsBooked : int
+  - totalCost : double
+  - status : BookingStatus
+  --
+  + calculateTotalCost() : double
+  + confirm() : void
+  + cancel() : void
+  + getStatus() : BookingStatus
+  - triggerEmail() : void
+}
+
+class Payment {
+  - paymentId : String
+  - amount : double
+  - status : PaymentStatus
+  - timestamp : Date
+  --
+  + processPayment() : PaymentStatus
+  + processRefund() : PaymentStatus
+  + getStatus() : PaymentStatus
+}
+
+class PaymentGateway <<simulated>> {
+  - gatewayName : String
+  --
+  + validateDetails(cardNo : String, expiry : String) : boolean
+  + processTransaction(amount : double) : PaymentStatus
+  + processRefund(amount : double) : PaymentStatus
+}
+
+User <|-- Traveler
+User <|-- AdventureProvider
+User <|-- Admin
+
+AdventureProvider "1" -- "0..*" Trip    : lists >
+Traveler          "1" -- "0..*" Booking : makes >
+Trip              "1" -- "0..*" Booking : has >
+Booking           "1" *-- "1"  Payment  : paid by >
+Payment ..> PaymentGateway : uses >
+
+@enduml
