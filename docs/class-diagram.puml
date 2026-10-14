@@ -7,12 +7,41 @@
 ' Visibility:  - private   # protected   + public
 ' (~ package is not used: C++ has no package access)
 ' {static} = static member (underlined)   {abstract} = pure virtual (italic)
+' Simple getters (getName(), getTitle(), ...) are left out to keep it readable.
 
 skinparam classAttributeIconSize 0
 skinparam shadowing false
 hide empty members
 
 title Adventure Booking System — Class Diagram
+
+' ============================ SYSTEM ============================
+
+class BookingSystem {
+  - today : String
+  - nextUserNumber : int
+  --
+  + login(email : String, password : String) : User
+  + checkNewTraveler(name : String, email : String, password : String, dob : String, fitness : int) : String
+  + registerTraveler(name : String, email : String, password : String, phone : String, contact : EmergencyContact, dob : String, blood : String, fitness : FitnessLevel) : Traveler
+  + searchUsers(keyword : String) : User[]
+  + addTrip(trip : Trip) : Trip
+  + findTrip(tripId : String) : Trip
+  + openTrips() : Trip[]
+  + searchTrips(keyword : String) : Trip[]
+  + tripsOf(provider : AdventureProvider) : Trip[]
+  + isOpenForBooking(trip : Trip) : bool
+  + bookTrip(traveler : Traveler, trip : Trip, seats : int, cardNo : String, expiry : String) : Booking
+  + cancelBooking(traveler : Traveler, booking : Booking) : bool
+  + findBooking(bookingId : String) : Booking
+  + bookingsForTrip(trip : Trip) : Booking[]
+  + notifyTravelers(trip : Trip, message : String) : void
+  + loadSampleData() : void
+}
+
+interface Searchable {
+  + {abstract} matches(keyword : String) : bool
+}
 
 ' ============================ USERS ============================
 
@@ -26,12 +55,11 @@ abstract class User {
   # {static} showConstructorCalls : bool
   --
   + login(email : String, password : String) : bool
+  + updateProfile(newName : String, newPhone : String) : void
+  + matches(keyword : String) : bool
   + {abstract} getRole() : String
-  + getUserId() : String
-  + getName() : String
-  + getEmail() : String
+  + {abstract} showMenu(system : BookingSystem) : void
   + {static} getTotalUsers() : int
-  + {static} setShowConstructorCalls(on : bool) : void
   # validatePassword(raw : String) : bool
   # {static} traceConstructor(className : String) : void
 }
@@ -41,12 +69,14 @@ class Traveler {
   - bloodGroup : String
   - fitnessLevel : FitnessLevel
   --
+  + maxSeatsPerBooking() : int
+  + canBook(trip : Trip, seats : int) : bool
   + bookTrip(trip : Trip, seats : int, gateway : PaymentGateway, cardNo : String, expiry : String, today : String) : Booking
   + cancelBooking(booking : Booking, gateway : PaymentGateway, today : String) : bool
   + viewMyBookings(onlyConfirmed : bool = false) : void
   + getEmergencyContact() : EmergencyContact
-  + getFitnessLevel() : FitnessLevel
   + getRole() : String
+  + showMenu(system : BookingSystem) : void
 }
 
 class "Traveler::EmergencyContact" as EmergencyContact <<nested>> {
@@ -54,8 +84,6 @@ class "Traveler::EmergencyContact" as EmergencyContact <<nested>> {
   - phone : String
   --
   + EmergencyContact(name : String = ~"~", phone : String = ~"~")
-  + getName() : String
-  + getPhone() : String
 }
 
 class AdventureProvider {
@@ -67,15 +95,19 @@ class AdventureProvider {
   --
   + createTrip(title : String, location : String, price : double, start : String, end : String, cap : int, minAge : int, fit : FitnessLevel) : Trip
   + publishTrip(t : Trip) : void
+  + removeTrip(trip : Trip) : bool
   + getRole() : String
+  + showMenu(system : BookingSystem) : void
 }
 
 class Admin {
-  + viewAllUsers(users : User[], count : int) : void
-  + viewAllBookings(bookings : Booking[], count : int) : void
+  + viewAllUsers(users : User[]) : void
+  + viewAllBookings(bookings : Booking[]) : void
+  + tripReport(trips : Trip[], bookings : Booking[]) : void
   + removeTrip(trip : Trip) : bool
   + settlePendingRefund(payment : Payment, gateway : PaymentGateway) : bool
   + getRole() : String
+  + showMenu(system : BookingSystem) : void
 }
 
 class SuperAdmin <<final>> {
@@ -83,16 +115,20 @@ class SuperAdmin <<final>> {
   --
   + viewSystemStats(password : String) : void
   + getRole() : String
+  + showMenu(system : BookingSystem) : void
 }
 
 class TravelerProvider <<final>> {
+  + maxSeatsPerBooking() : int
   + getRole() : String
+  + showMenu(system : BookingSystem) : void
 }
 
 ' ============================ TRIPS & BOOKINGS ============================
 
 class Trip {
   - tripId : String
+  - providerId : String
   - title : String
   - location : String
   - price : double
@@ -107,12 +143,16 @@ class Trip {
   --
   + Trip()
   + Trip(title : String, location : String, price : double, start : String, end : String, cap : int, minAge : int, fit : FitnessLevel)
+  + checkDetails(today : String) : String
   + reserveSlots(count : int) : bool
   + releaseSlots(count : int) : void
   + publish() : void
+  + close() : void
+  + changePrice(newPrice : double) : void
+  + changeDates(newStart : String, newEnd : String) : void
   + canBeRemoved() : bool
-  + getAvailableSlots() : int
-  + getPrice() : double
+  + matches(keyword : String) : bool
+  + printRow() : void
   + {static} getTripCount() : int
   + operator++() : Trip
   + operator<(other : Trip) : bool
@@ -156,6 +196,7 @@ class PaymentGateway <<simulated>> {
   - failMode : bool
   --
   + setFailMode(failMode : bool) : void
+  + isFailing() : bool
   + validateDetails(cardNo : String, expiry : String) : bool
   + processTransaction(amount : double) : PaymentStatus
   + processRefund(amount : double) : PaymentStatus
@@ -199,6 +240,10 @@ enum PaymentStatus {
 
 ' ============================ RELATIONSHIPS ============================
 
+' Realization (dashed line, hollow triangle): the class follows the interface
+Searchable <|.. User
+Searchable <|.. Trip
+
 ' Generalization (inheritance)
 User <|-- Traveler : <<virtual>>
 User <|-- AdventureProvider : <<virtual>>
@@ -208,11 +253,15 @@ Traveler <|-- TravelerProvider
 AdventureProvider <|-- TravelerProvider
 
 ' Composition (filled diamond): the part lives and dies with the whole
+BookingSystem *-- "1" PaymentGateway : has >
+BookingSystem *-- "0..*" User : owns >
+BookingSystem *-- "0..*" Trip : owns >
+BookingSystem *-- "0..*" Booking : owns >
 Traveler *-- "1" EmergencyContact : has >
 Booking "1" *-- "1" Payment : paid by >
 
 ' Aggregation (hollow diamond): Traveler keeps pointers to its bookings,
-' but does not own them (they are deleted elsewhere)
+' but does not own them (the BookingSystem does)
 Traveler "1" o-- "0..*" Booking : makes >
 
 ' Association with multiplicity
@@ -232,10 +281,12 @@ Payment ..> PaymentStatus
 
 ' ============================ NOTES ============================
 
-note right of User
-  **Abstract class:** getRole() is pure
-  virtual (= 0), so no plain User object
-  can be created.
+note top of User
+  **Abstract class:** getRole() and showMenu()
+  are pure virtual (= 0), so no plain User
+  object can be created.
+  After login, user->showMenu() opens a
+  different menu for each kind of user.
 end note
 
 note bottom of TravelerProvider

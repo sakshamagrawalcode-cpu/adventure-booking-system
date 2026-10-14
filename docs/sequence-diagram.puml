@@ -4,8 +4,9 @@
 ' Saksham 20251501153 | Prerna 20251501135 | Naitik 20251501133
 ' Kush 20251501176 | Abhay 20251502033
 '
-' Follows Traveler::bookTrip() in src/Booking.h step by step.
-' Values are the ones main() uses: Aarav books 2 seats on Hampta Pass Trek.
+' Follows bookTripScreen() in src/TravelerMenu.h, BookingSystem::bookTrip()
+' and Traveler::bookTrip() in src/Booking.h, step by step.
+' Values: Aarav books 2 seats on Hampta Pass Trek (TRP-2), today is 2026-10-15.
 
 skinparam shadowing false
 skinparam sequenceMessageAlign center
@@ -14,6 +15,7 @@ autonumber
 title Sequence Diagram — UC-01 Book Adventure
 
 actor "Traveler" as Person
+participant ":BookingSystem" as S
 participant "aarav : Traveler" as T
 participant "hamptaPass : Trip" as Trip
 participant "payment : Payment" as P
@@ -21,17 +23,31 @@ participant "gateway : PaymentGateway" as G
 participant "b1 : Booking" as B
 actor "Email Service" as E
 
-Person -> T : bookTrip(hamptaPass, 2, gateway, cardNo, expiry, today)
+Person -> S : choose "Book a trip", trip ID "TRP-2"
+activate S
+S -> S : findTrip("TRP-2")
+S -> S : isOpenForBooking(hamptaPass)
+S --> Person : "Rs. 4500 per seat, 20 seat(s) left"
+deactivate S
+
+Person -> T : seats = 2
 activate T
-
-T -> Trip : getAvailableSlots()
-activate Trip
-Trip --> T : 20
-deactivate Trip
-
-alt 4a: seats < 1 or more than seats left
-  T --> Person : nullptr  ("Only N seat(s) left")
-else enough seats
+T -> T : canBook(hamptaPass, 2)
+note right of T
+  seats >= 1, seats <= seats left,
+  seats <= maxSeatsPerBooking()
+  (virtual: 6 for a Traveler,
+   15 for a TravelerProvider)
+end note
+alt 4a: not enough seats / over the limit
+  T --> Person : "Only N seat(s) left" (nothing else is asked)
+else seats are fine
+  T --> Person : "Total to pay: Rs. 9000"
+  deactivate T
+  Person -> S : card number, expiry
+  activate S
+  S -> T : bookTrip(hamptaPass, 2, gateway, cardNo, expiry, today)
+  activate T
   T -> P ** : Payment(4500 x 2, today)
   T -> P : processPayment(gateway, cardNo, expiry)
   activate P
@@ -45,7 +61,8 @@ else enough seats
   deactivate P
 
   alt 6a: payment FAILED
-    T --> Person : nullptr  ("Payment failed. Nothing saved")
+    T --> S : nullptr
+    S --> Person : "Payment failed. Nothing saved"
   else payment SUCCESS
     T -> B ** : new Booking(this, &hamptaPass, 2, today, payment)
     activate B
@@ -57,14 +74,16 @@ else enough seats
     B -> E : triggerEmail("Booking BK-1 confirmed")
     deactivate B
     T -> T : myBookings.push_back(b1)
-    T --> Person : b1  (status CONFIRMED)
+    T --> S : b1
+    deactivate T
+    S -> S : bookings.push_back(b1)
+    S --> Person : booking details + Receipt (Receipt r = *b1)
   end
+  deactivate S
 end
 
-deactivate T
-
 note over Person, E
-  Objects are created only when needed: the Payment after the seat check,
+  Objects are made only when needed: the Payment after the seat check,
   and the Booking (with **new**) only after the payment succeeds.
 end note
 

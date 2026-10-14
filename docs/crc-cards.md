@@ -96,6 +96,16 @@ Saksham (20251501153) · Prerna (20251501135) · Naitik (20251501133) · Kush (2
 | 1. Build a short summary from a finished booking | Booking |
 | 2. Show the booking ID, traveler, trip, seats and amount paid | Booking, Traveler, Trip |
 
+## 12. Class: BookingSystem
+
+| Responsibilities | Collaborators |
+| :--- | :--- |
+| 1. Keep every user, trip and booking in one place (and delete them at the end) | User, Trip, Booking |
+| 2. Log users in and register new travelers | User, Traveler |
+| 3. List open trips and search trips and users by a keyword | Trip, User (through Searchable) |
+| 4. Book and cancel trips using its one payment gateway | Traveler, Trip, Booking, PaymentGateway |
+| 5. Find a trip's bookings and email booked travelers when a trip changes | Booking, Traveler |
+
 ---
 
 ## Why User is the parent class

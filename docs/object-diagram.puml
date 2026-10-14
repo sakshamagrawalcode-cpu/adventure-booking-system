@@ -32,6 +32,7 @@ object "meera : AdventureProvider" as provider1 {
 
 object "rafting1 : Trip" as trip1 {
   tripId = "TRP-021"
+  providerId = "U-104"
   title = "River Rafting - Rishikesh"
   location = "Rishikesh, Uttarakhand"
   price = 1500.00
