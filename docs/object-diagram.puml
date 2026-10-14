@@ -1,12 +1,12 @@
 @startuml object-diagram
 ' Adventure Booking System — Object Diagram
-' Team ID: 37
+' Team ID: 3
 ' Saksham 20251501153 | Prerna 20251501135 | Naitik 20251501133
-' Kush 20251501176 | Abhay 2025102033
+' Kush 20251501176 | Abhay 20251502033
 '
-' SCENARIO: Rohan books 2 seats on the River Rafting trip listed
+' SCENARIO: Rohan books 2 seats on the River Rafting trip created
 ' by provider Meera, and the payment succeeds.
-' Every value below matches docs/class-diagram.puml.
+' Every attribute name below matches docs/class-diagram.puml.
 
 skinparam shadowing false
 skinparam object {
@@ -21,29 +21,48 @@ object "meera : AdventureProvider" as provider1 {
   userId = "U-104"
   name = "Meera Singh"
   email = "meera@naturetreks.in"
-  password = "********"
+  password = "(hidden)"
+  phone = "+91-98765-10404"
+  agencyName = "Nature Treks"
+  licenseNumber = "UK/ADV/2025/0213"
+  certification = "ATOAI Certified"
+  rating = 4.5
+  isVerified = true
 }
 
 object "rafting1 : Trip" as trip1 {
   tripId = "TRP-021"
   title = "River Rafting - Rishikesh"
   location = "Rishikesh, Uttarakhand"
-  date = 2026-09-20
   price = 1500.00
-  totalSeats = 10
-  seatsLeft = 8
+  startDate = "2026-09-20"
+  endDate = "2026-09-20"
+  maxCapacity = 10
+  availableSlots = 8
+  minAge = 14
+  requiredFitness = LOW
+  status = PUBLISHED
 }
 
 object "rohan : Traveler" as traveler1 {
   userId = "U-208"
   name = "Rohan Verma"
   email = "rohan.verma@gmail.com"
-  password = "********"
+  password = "(hidden)"
+  phone = "+91-99887-20808"
+  dateOfBirth = "2003-11-05"
+  bloodGroup = "O+"
+  fitnessLevel = MODERATE
+}
+
+object "rohanContact : Traveler::EmergencyContact" as contact1 {
+  name = "Sunita Verma"
+  phone = "+91-99887-20800"
 }
 
 object "bk3305 : Booking" as booking1 {
   bookingId = "BK-3305"
-  bookingDate = 2026-09-10
+  bookingDate = "2026-09-10"
   seatsBooked = 2
   totalCost = 3000.00
   status = CONFIRMED
@@ -53,20 +72,22 @@ object "pay8821 : Payment" as payment1 {
   paymentId = "PAY-8821"
   amount = 3000.00
   status = SUCCESS
-  timestamp = 2026-09-10 11:15
+  timestamp = "2026-09-10"
 }
 
 object "gateway1 : PaymentGateway" as gateway1 {
   gatewayName = "SimulatedGateway"
+  failMode = false
 }
 
 ' ---------------------------- LINKS -------------------------------
-' Links are single instances of the associations in the class diagram.
+' Links are single instances of the relationships in the class diagram.
 ' Object diagrams carry no multiplicities.
 
-provider1 -- trip1    : lists
-traveler1 -- booking1 : makes
-trip1     -- booking1 : has
+provider1 ..> trip1    : created
+traveler1 *-- contact1 : has
+traveler1 o-- booking1 : makes
+booking1  --> trip1    : for
 booking1  *-- payment1 : paid by
 payment1  ..> gateway1 : uses
 
@@ -74,7 +95,7 @@ payment1  ..> gateway1 : uses
 
 note right of trip1
   **Seat math:**
-  seatsLeft = totalSeats - seats already booked
+  availableSlots = maxCapacity - seats already booked
   8 = 10 - 2
 end note
 

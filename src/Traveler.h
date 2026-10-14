@@ -1,3 +1,20 @@
+// =====================================================================
+//  Traveler.h  -  a person who BOOKS trips
+// =====================================================================
+//  Parent: User.   Child: TravelerProvider (see TravelerProvider.h)
+//
+//  OOP topics in this file:
+//    [Single inheritance]  Traveler -> User
+//    [Virtual inheritance] 'virtual public User' (needed by TravelerProvider)
+//    [Constructors in inheritance]  [Function overriding]
+//    [Nested class]  EmergencyContact
+//    [Default arguments in constructor]  EmergencyContact(string n = "", string p = "")
+//    [Composition]  the EmergencyContact object lives inside the Traveler
+//    [Aggregation]  keeps pointers to its bookings, but does not own them
+//    [Function prototype]  bookTrip(), cancelBooking(), viewMyBookings()
+//    [Default arguments in functions]  viewMyBookings(bool onlyConfirmed = false)
+//    [Returning objects from functions]  getEmergencyContact()
+// =====================================================================
 #ifndef TRAVELER_H
 #define TRAVELER_H
 
@@ -6,25 +23,24 @@
 #include "Trip.h"
 
 // Forward declarations: Traveler only stores POINTERS to these,
-// so the full class is not needed here.
-// bookTrip(), cancelBooking() and viewMyBookings() are written at the
-// bottom of Booking.h, because they need the full Booking class.
+// so the full classes are not needed in this file.
 class Booking;
 class PaymentGateway;
 
-// [final] no class can inherit from Traveler
-// [Virtual base class] "virtual public User" -> only ONE User part is kept,
-// even if a class later inherits User through two paths
-class Traveler final : virtual public User {
+// [Virtual inheritance] "virtual public User" means: if a later class gets User
+// through TWO parents, it still keeps only ONE User part. (See TravelerProvider.h)
+class Traveler : virtual public User {
 public:
-    // [Nested class] EmergencyContact only makes sense inside Traveler.
-    // Outside, it is written as Traveler::EmergencyContact
+    // [Nested class] a class inside a class. It only makes sense for a Traveler,
+    // so outside it is written as  Traveler::EmergencyContact
     class EmergencyContact {
     private:
         string name;
         string phone;
 
     public:
+        // [Default arguments in constructor] both values can be left out:
+        //   EmergencyContact c;   ->  name = "", phone = ""
         EmergencyContact(string n = "", string p = "") : name(n), phone(p) {}
 
         string getName() const { return name; }
@@ -32,44 +48,51 @@ public:
     };
 
 private:
-    EmergencyContact emergencyContact;
+    EmergencyContact emergencyContact;   // [Composition] lives and dies with the Traveler
     string dateOfBirth;
     string bloodGroup;
     FitnessLevel fitnessLevel;
 
-    // [Pointer to objects] list of this traveler's bookings (not owned)
+    // [Aggregation] pointers to this traveler's bookings.
+    // The Traveler does NOT own them (main() deletes them); it only keeps a list.
     vector<Booking*> myBookings;
 
 public:
-    // With a virtual base class, the most-derived class (Traveler) calls User's constructor
+    // [Constructors in inheritance] the User part is built FIRST by calling User(...)
     Traveler(string id, string n, string e, string pass, string ph,
              EmergencyContact contact, string dob, string blood, FitnessLevel fit)
         : User(id, n, e, pass, ph), emergencyContact(contact),
-          dateOfBirth(dob), bloodGroup(blood), fitnessLevel(fit) {}
+          dateOfBirth(dob), bloodGroup(blood), fitnessLevel(fit) {
+        traceConstructor("Traveler");
+    }
 
+    // [Returning objects from functions] gives back a copy of the contact object
     EmergencyContact getEmergencyContact() const { return emergencyContact; }
     FitnessLevel getFitnessLevel() const { return fitnessLevel; }
 
-    // [Virtual function] overrides User::getRole()
-    string getRole() const override {
-        return "Traveler";
-    }
+    // [Function overriding] fills in User's pure virtual getRole()
+    string getRole() const override { return "Traveler"; }
 
-    // UC-01 Book Adventure - returns nullptr if no booking is made
+    // [Function prototype] only the DECLARATION is here. The bodies are written
+    // at the bottom of Booking.h, because they create and use Booking objects,
+    // and the full Booking class is only known there.
     Booking* bookTrip(Trip& trip, int seats, const PaymentGateway& gateway,
-                      const string& cardNo, const string& expiry, const string& today);
+                      const string& cardNo, const string& expiry,
+                      const string& today);                          // UC-01 Book Adventure
+    bool cancelBooking(Booking* booking, const PaymentGateway& gateway,
+                       const string& today);                         // UC-02 Cancel Booking
 
-    // UC-02 Cancel Booking
-    bool cancelBooking(Booking* booking, const PaymentGateway& gateway, const string& today);
+    // [Default arguments in functions]
+    //   viewMyBookings()      -> shows ALL bookings      (onlyConfirmed = false)
+    //   viewMyBookings(true)  -> shows only CONFIRMED ones
+    void viewMyBookings(bool onlyConfirmed = false) const;
 
-    void viewMyBookings() const;
-
-    // [Stream operator overloading using friend function]
+    // [Friend function] + [Stream operator overloading]
     friend ostream& operator<<(ostream& out, const Traveler& t);
 };
 
 inline ostream& operator<<(ostream& out, const Traveler& t) {
-    out << static_cast<const User&>(t);   // reuse User's operator<< for base part
+    out << static_cast<const User&>(t);   // print the User part first, using User's <<
     out << "DOB     : " << t.dateOfBirth << "\n"
         << "Blood   : " << t.bloodGroup << "\n"
         << "Fitness : " << toString(t.fitnessLevel) << "\n"

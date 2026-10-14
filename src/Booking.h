@@ -1,3 +1,20 @@
+// =====================================================================
+//  Booking.h  -  one booking: a traveler + a trip + seats + a payment
+// =====================================================================
+//  Made in UC-01 (Book Adventure), cancelled in UC-02 (Cancel Booking).
+//
+//  This file ALSO has the bodies of Traveler's booking functions
+//  (bookTrip, cancelBooking, viewMyBookings) at the bottom - see why there.
+//
+//  OOP topics in this file:
+//    [Pointers to objects]  arrow operator  trip->getPrice()
+//    [this pointer]  [Composition]  Booking owns its Payment
+//    [Dynamic memory allocation]  new Booking(...)
+//    [Static data member]  [Static member function]
+//    [Inline function]  [Function overloading]  toString()
+//    [Friend function]  [Stream operator overloading]
+//    [Function prototype]  (definitions of Traveler's functions)
+// =====================================================================
 #ifndef BOOKING_H
 #define BOOKING_H
 
@@ -7,6 +24,7 @@
 
 enum BookingStatus { CONFIRMED, CANCELLED };
 
+// [Inline function] + [Function overloading] another toString() version
 inline string toString(BookingStatus s) {
     if (s == CONFIRMED) return "CONFIRMED";
     return "CANCELLED";
@@ -20,24 +38,24 @@ private:
     double totalCost;
     BookingStatus status;
 
-    // [Pointer to objects] Booking does not own the Traveler or the Trip,
+    // [Pointers to objects] the Booking does NOT own the Traveler or the Trip,
     // it only points to them (association in the class diagram)
     Traveler* traveler;
     Trip* trip;
 
-    // Composition: the Payment lives inside the Booking (Booking *-- Payment)
+    // [Composition] the Payment object lives INSIDE the Booking (Booking *-- Payment)
     Payment payment;
 
-    // [Static variable] counts bookings, also used to generate bookingId
+    // [Static data member] counts bookings; also used to make the booking ID
     static int bookingCount;
 
-    // Email Service is an outside system, so the email is only simulated
+    // The Email Service is an outside system, so the email is only printed
     void triggerEmail(const string& message) const {
         cout << "[Email to " << traveler->getEmail() << "] " << message << "\n";
     }
 
 public:
-    // A Booking is created only AFTER the payment succeeds (UC-01 step 7),
+    // A Booking is made only AFTER the payment succeeds (UC-01 step 7),
     // so every new booking starts as CONFIRMED.
     Booking(Traveler* traveler, Trip* trip, int seatsBooked,
             string bookingDate, const Payment& payment)
@@ -57,12 +75,12 @@ public:
         triggerEmail("Booking " + bookingId + " confirmed for " + this->trip->getTitle());
     }
 
-    // [Pointer to objects] arrow operator: trip->getPrice()
+    // [Pointers to objects] arrow operator:  trip->getPrice()
     double calculateTotalCost() const {
         return trip->getPrice() * seatsBooked;
     }
 
-    // UC-02 Cancel Booking. Dates are "YYYY-MM-DD", so string compare works.
+    // UC-02 Cancel Booking. Dates are "YYYY-MM-DD", so comparing strings works.
     bool cancel(const PaymentGateway& gateway, const string& today) {
         if (status == CANCELLED) {
             cout << bookingId << " is already cancelled.\n";
@@ -92,12 +110,10 @@ public:
     Trip* getTrip() const { return trip; }
     Payment& getPayment() { return payment; }
 
-    // [Static function]
-    static int getBookingCount() {
-        return bookingCount;
-    }
+    // [Static member function]
+    static int getBookingCount() { return bookingCount; }
 
-    // [Stream operator overloading using friend function]
+    // [Friend function] + [Stream operator overloading]
     friend ostream& operator<<(ostream& out, const Booking& b);
 };
 
@@ -115,15 +131,14 @@ inline ostream& operator<<(ostream& out, const Booking& b) {
     return out;
 }
 
-// ------------------------------------------------------------------
-// Traveler's booking functions are written HERE, not in Traveler.h,
-// because they create and use Booking objects. The full Booking class
-// is only known after the definition above. (Traveler.h has only
-// "class Booking;" - a forward declaration.)
-// ------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// Traveler's booking functions are written HERE, not in Traveler.h.
+// Traveler.h has only their [Function prototype]s, because these bodies
+// create and use Booking objects, and the full Booking class is only
+// known after the definition above.
+// ---------------------------------------------------------------------
 
 // UC-01 Book Adventure. Returns nullptr when no booking is made (4a / 6a).
-// The Booking is made with new -> main.cpp must delete it.
 inline Booking* Traveler::bookTrip(Trip& trip, int seats, const PaymentGateway& gateway,
                                    const string& cardNo, const string& expiry,
                                    const string& today) {
@@ -145,7 +160,9 @@ inline Booking* Traveler::bookTrip(Trip& trip, int seats, const PaymentGateway& 
     }
 
     // Step 7: only now is the booking created.
-    // [this pointer] 'this' = address of the Traveler who called bookTrip()
+    // [Dynamic memory allocation] 'new' makes the Booking on the heap and gives
+    // back its address. It stays alive until someone calls 'delete' (main() does).
+    // [this pointer] 'this' = the address of the Traveler who called bookTrip()
     Booking* booking = new Booking(this, &trip, seats, today, payment);
     myBookings.push_back(booking);
     return booking;
@@ -162,9 +179,12 @@ inline bool Traveler::cancelBooking(Booking* booking, const PaymentGateway& gate
     return booking->cancel(gateway, today);
 }
 
-inline void Traveler::viewMyBookings() const {
-    cout << getName() << " has " << myBookings.size() << " booking(s):\n";
-    for (Booking* b : myBookings) {
+// [Default arguments in functions] the default value (= false) is written ONLY
+// in the declaration inside Traveler.h, never again here in the definition.
+inline void Traveler::viewMyBookings(bool onlyConfirmed) const {
+    cout << getName() << "'s " << (onlyConfirmed ? "CONFIRMED " : "") << "bookings:\n";
+    for (Booking* b : myBookings) {          // for each booking pointer in the list
+        if (onlyConfirmed && b->getStatus() != CONFIRMED) continue;
         cout << "  " << b->getBookingId() << " | " << b->getTrip()->getTitle()
              << " | seats " << b->getSeatsBooked()
              << " | " << toString(b->getStatus()) << "\n";

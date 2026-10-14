@@ -1,7 +1,7 @@
 # CRC Cards — Adventure Booking System
 
-**Team ID:** 37
-Saksham (20251501153) · Prerna (20251501135) · Naitik (20251501133) · Kush (20251501176) · Abhay (2025102033)
+**Team ID:** 3
+Saksham (20251501153) · Prerna (20251501135) · Naitik (20251501133) · Kush (20251501176) · Abhay (20251502033)
 
 ---
 
@@ -71,6 +71,30 @@ Saksham (20251501153) · Prerna (20251501135) · Naitik (20251501133) · Kush (2
 | 1. Validate the payment details it is given | Payment |
 | 2. Simulate the processing of a payment or a refund | Payment |
 | 3. Return the transaction status (SUCCESS / FAILED) | Payment |
+
+
+## 9. Class: SuperAdmin  (child of Admin)
+
+| Responsibilities | Collaborators |
+| :--- | :--- |
+| 1. Do everything an Admin can (inherited) | Admin |
+| 2. Confirm the password again before showing private numbers | User |
+| 3. Show system-wide counts of users, trips, bookings and payments | User, Trip, Booking, Payment |
+
+## 10. Class: TravelerProvider  (child of Traveler and AdventureProvider)
+
+| Responsibilities | Collaborators |
+| :--- | :--- |
+| 1. Book and cancel trips like a traveler (inherited) | Traveler, Booking |
+| 2. Create and publish trips like a provider (inherited) | AdventureProvider, Trip |
+| 3. Report one combined role, so there is no confusion between the two parents | Traveler, AdventureProvider |
+
+## 11. Class: Receipt
+
+| Responsibilities | Collaborators |
+| :--- | :--- |
+| 1. Build a short summary from a finished booking | Booking |
+| 2. Show the booking ID, traveler, trip, seats and amount paid | Booking, Traveler, Trip |
 
 ---
 

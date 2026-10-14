@@ -1,0 +1,71 @@
+@startuml sequence-diagram
+' Adventure Booking System — Sequence Diagram for UC-01 Book Adventure
+' Team ID: 3
+' Saksham 20251501153 | Prerna 20251501135 | Naitik 20251501133
+' Kush 20251501176 | Abhay 20251502033
+'
+' Follows Traveler::bookTrip() in src/Booking.h step by step.
+' Values are the ones main() uses: Aarav books 2 seats on Hampta Pass Trek.
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+autonumber
+
+title Sequence Diagram — UC-01 Book Adventure
+
+actor "Traveler" as Person
+participant "aarav : Traveler" as T
+participant "hamptaPass : Trip" as Trip
+participant "payment : Payment" as P
+participant "gateway : PaymentGateway" as G
+participant "b1 : Booking" as B
+actor "Email Service" as E
+
+Person -> T : bookTrip(hamptaPass, 2, gateway, cardNo, expiry, today)
+activate T
+
+T -> Trip : getAvailableSlots()
+activate Trip
+Trip --> T : 20
+deactivate Trip
+
+alt 4a: seats < 1 or more than seats left
+  T --> Person : nullptr  ("Only N seat(s) left")
+else enough seats
+  T -> P ** : Payment(4500 x 2, today)
+  T -> P : processPayment(gateway, cardNo, expiry)
+  activate P
+  P -> G : validateDetails(cardNo, expiry)
+  activate G
+  G --> P : true
+  P -> G : processTransaction(9000)
+  G --> P : SUCCESS
+  deactivate G
+  P --> T : SUCCESS
+  deactivate P
+
+  alt 6a: payment FAILED
+    T --> Person : nullptr  ("Payment failed. Nothing saved")
+  else payment SUCCESS
+    T -> B ** : new Booking(this, &hamptaPass, 2, today, payment)
+    activate B
+    B -> Trip : reserveSlots(2)
+    activate Trip
+    Trip --> B : true  (seats left 20 -> 18)
+    deactivate Trip
+    B -> B : calculateTotalCost()  = 9000
+    B -> E : triggerEmail("Booking BK-1 confirmed")
+    deactivate B
+    T -> T : myBookings.push_back(b1)
+    T --> Person : b1  (status CONFIRMED)
+  end
+end
+
+deactivate T
+
+note over Person, E
+  Objects are created only when needed: the Payment after the seat check,
+  and the Booking (with **new**) only after the payment succeeds.
+end note
+
+@enduml

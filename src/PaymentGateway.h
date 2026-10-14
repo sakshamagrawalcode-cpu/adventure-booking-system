@@ -1,3 +1,13 @@
+// =====================================================================
+//  PaymentGateway.h  -  a FAKE (simulated) payment gateway
+// =====================================================================
+//  No real bank is contacted. It checks the card details and answers
+//  SUCCESS or FAILED. 'failMode' makes it fail on purpose, so we can test
+//  what happens when a payment or refund fails (UC-01 6a, UC-02 5a).
+//
+//  OOP topics in this file:
+//    [this pointer]  [Inline function]  [Function overloading]  toString()
+// =====================================================================
 #ifndef PAYMENTGATEWAY_H
 #define PAYMENTGATEWAY_H
 
@@ -6,10 +16,11 @@
 using namespace std;
 
 // Kept here (not in Payment.h) because the gateway returns it,
-// and Payment already includes this file.
-// PENDING = refund failed, waiting for admin to settle it (UC-02 5a)
+// and Payment.h already includes this file.
+// PENDING = a refund failed and is waiting for the admin to settle it (UC-02 5a)
 enum PaymentStatus { SUCCESS, FAILED, PENDING, REFUNDED };
 
+// [Inline function] + [Function overloading] another toString() version
 inline string toString(PaymentStatus s) {
     if (s == SUCCESS) return "SUCCESS";
     if (s == FAILED) return "FAILED";
@@ -17,8 +28,6 @@ inline string toString(PaymentStatus s) {
     return "REFUNDED";
 }
 
-// Simulated gateway: no real bank is contacted.
-// failMode lets us make payments/refunds fail on purpose (to test UC-01 6a, UC-02 5a).
 class PaymentGateway {
 private:
     string gatewayName;
@@ -26,8 +35,8 @@ private:
 
 public:
     PaymentGateway(string gatewayName) {
-        // [this pointer] parameter has the same name as the data member,
-        // so this->gatewayName means "the member of this object"
+        // [this pointer] the parameter has the SAME name as the data member,
+        // so  this->gatewayName  means "the member of THIS object"
         this->gatewayName = gatewayName;
         this->failMode = false;
     }

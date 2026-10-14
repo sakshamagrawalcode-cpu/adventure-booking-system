@@ -1,12 +1,189 @@
 @startuml class-diagram
-' Adventure Booking System — Domain Class Diagram
-' Team ID: 37
+' Adventure Booking System — Class Diagram (matches the code in src/)
+' Team ID: 3
 ' Saksham 20251501153 | Prerna 20251501135 | Naitik 20251501133
-' Kush 20251501176 | Abhay 2025102033
+' Kush 20251501176 | Abhay 20251502033
+'
+' Visibility:  - private   # protected   + public
+' (~ package is not used: C++ has no package access)
+' {static} = static member (underlined)   {abstract} = pure virtual (italic)
 
 skinparam classAttributeIconSize 0
 skinparam shadowing false
 hide empty members
+
+title Adventure Booking System — Class Diagram
+
+' ============================ USERS ============================
+
+abstract class User {
+  - userId : String
+  - name : String
+  - email : String
+  - password : String
+  - phone : String
+  - {static} totalUsers : int
+  # {static} showConstructorCalls : bool
+  --
+  + login(email : String, password : String) : bool
+  + {abstract} getRole() : String
+  + getUserId() : String
+  + getName() : String
+  + getEmail() : String
+  + {static} getTotalUsers() : int
+  + {static} setShowConstructorCalls(on : bool) : void
+  # validatePassword(raw : String) : bool
+  # {static} traceConstructor(className : String) : void
+}
+
+class Traveler {
+  - dateOfBirth : String
+  - bloodGroup : String
+  - fitnessLevel : FitnessLevel
+  --
+  + bookTrip(trip : Trip, seats : int, gateway : PaymentGateway, cardNo : String, expiry : String, today : String) : Booking
+  + cancelBooking(booking : Booking, gateway : PaymentGateway, today : String) : bool
+  + viewMyBookings(onlyConfirmed : bool = false) : void
+  + getEmergencyContact() : EmergencyContact
+  + getFitnessLevel() : FitnessLevel
+  + getRole() : String
+}
+
+class "Traveler::EmergencyContact" as EmergencyContact <<nested>> {
+  - name : String
+  - phone : String
+  --
+  + EmergencyContact(name : String = ~"~", phone : String = ~"~")
+  + getName() : String
+  + getPhone() : String
+}
+
+class AdventureProvider {
+  - agencyName : String
+  - licenseNumber : String
+  - certification : String
+  - rating : double
+  - isVerified : bool
+  --
+  + createTrip(title : String, location : String, price : double, start : String, end : String, cap : int, minAge : int, fit : FitnessLevel) : Trip
+  + publishTrip(t : Trip) : void
+  + getRole() : String
+}
+
+class Admin {
+  + viewAllUsers(users : User[], count : int) : void
+  + viewAllBookings(bookings : Booking[], count : int) : void
+  + removeTrip(trip : Trip) : bool
+  + settlePendingRefund(payment : Payment, gateway : PaymentGateway) : bool
+  + getRole() : String
+}
+
+class SuperAdmin <<final>> {
+  - companyName : String
+  --
+  + viewSystemStats(password : String) : void
+  + getRole() : String
+}
+
+class TravelerProvider <<final>> {
+  + getRole() : String
+}
+
+' ============================ TRIPS & BOOKINGS ============================
+
+class Trip {
+  - tripId : String
+  - title : String
+  - location : String
+  - price : double
+  - startDate : String
+  - endDate : String
+  - maxCapacity : int
+  - availableSlots : int
+  - minAge : int
+  - requiredFitness : FitnessLevel
+  - status : TripStatus
+  - {static} tripCount : int
+  --
+  + Trip()
+  + Trip(title : String, location : String, price : double, start : String, end : String, cap : int, minAge : int, fit : FitnessLevel)
+  + reserveSlots(count : int) : bool
+  + releaseSlots(count : int) : void
+  + publish() : void
+  + canBeRemoved() : bool
+  + getAvailableSlots() : int
+  + getPrice() : double
+  + {static} getTripCount() : int
+  + operator++() : Trip
+  + operator<(other : Trip) : bool
+  - hasCapacityFor(count : int) : bool
+  - assignNewId() : void
+}
+
+class Booking {
+  - bookingId : String
+  - bookingDate : String
+  - seatsBooked : int
+  - totalCost : double
+  - status : BookingStatus
+  - {static} bookingCount : int
+  --
+  + calculateTotalCost() : double
+  + cancel(gateway : PaymentGateway, today : String) : bool
+  + getStatus() : BookingStatus
+  + getPayment() : Payment
+  + {static} getBookingCount() : int
+  - triggerEmail(message : String) : void
+}
+
+class Payment {
+  - paymentId : String
+  - amount : double
+  - status : PaymentStatus
+  - timestamp : String
+  - {static} paymentCount : int
+  --
+  + Payment(amount : double, timestamp : String = "N/A")
+  + operator double() : double
+  + processPayment(gateway : PaymentGateway, cardNo : String, expiry : String) : PaymentStatus
+  + processRefund(gateway : PaymentGateway) : PaymentStatus
+  + getStatus() : PaymentStatus
+  + {static} getPaymentCount() : int
+}
+
+class PaymentGateway <<simulated>> {
+  - gatewayName : String
+  - failMode : bool
+  --
+  + setFailMode(failMode : bool) : void
+  + validateDetails(cardNo : String, expiry : String) : bool
+  + processTransaction(amount : double) : PaymentStatus
+  + processRefund(amount : double) : PaymentStatus
+}
+
+class Receipt {
+  - bookingId : String
+  - travelerName : String
+  - tripTitle : String
+  - seats : int
+  - amountPaid : double
+  --
+  + Receipt(b : Booking)
+}
+
+' ============================ ENUMS ============================
+
+enum FitnessLevel {
+  LOW
+  MODERATE
+  HIGH
+}
+
+enum TripStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
 
 enum BookingStatus {
   CONFIRMED
@@ -17,106 +194,62 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   PENDING
+  REFUNDED
 }
 
-abstract class User {
-  - userId : String
-  - name : String
-  - email : String
-  - password : String
-  --
-  + login(email : String, password : String) : boolean
-  + logout() : void
-  + updateProfile(name : String, email : String) : void
-  # validatePassword(raw : String) : boolean
-  + {abstract} getRole() : String
-}
+' ============================ RELATIONSHIPS ============================
 
-class Traveler {
-  --
-  + bookTrip(t : Trip, seats : int) : Booking
-  + cancelBooking(b : Booking) : void
-  + viewMyBookings() : List<Booking>
-  + getRole() : String
-}
-
-class AdventureProvider {
-  --
-  + createTrip(title : String, location : String, date : Date, price : double, seats : int) : Trip
-  + editTrip(t : Trip) : void
-  + publishTrip(t : Trip) : void
-  + removeTrip(t : Trip) : void
-  + viewTripBookings(t : Trip) : List<Booking>
-  + getRole() : String
-}
-
-class Admin {
-  --
-  + viewAllUsers() : List<User>
-  + viewAllBookings() : List<Booking>
-  + removeTrip(t : Trip) : void
-  + settlePendingRefund(p : Payment) : void
-  + getRole() : String
-}
-
-class Trip {
-  - tripId : String
-  - title : String
-  - location : String
-  - date : Date
-  - price : double
-  - totalSeats : int
-  - seatsLeft : int
-  --
-  + getSeatsLeft() : int
-  + reserveSeats(count : int) : boolean
-  + releaseSeats(count : int) : void
-  + validateDetails() : boolean
-  + canBeRemoved() : boolean
-  - hasCapacityFor(count : int) : boolean
-}
-
-class Booking {
-  - bookingId : String
-  - bookingDate : Date
-  - seatsBooked : int
-  - totalCost : double
-  - status : BookingStatus
-  --
-  + calculateTotalCost() : double
-  + confirm() : void
-  + cancel() : void
-  + getStatus() : BookingStatus
-  - triggerEmail() : void
-}
-
-class Payment {
-  - paymentId : String
-  - amount : double
-  - status : PaymentStatus
-  - timestamp : Date
-  --
-  + processPayment() : PaymentStatus
-  + processRefund() : PaymentStatus
-  + getStatus() : PaymentStatus
-}
-
-class PaymentGateway <<simulated>> {
-  - gatewayName : String
-  --
-  + validateDetails(cardNo : String, expiry : String) : boolean
-  + processTransaction(amount : double) : PaymentStatus
-  + processRefund(amount : double) : PaymentStatus
-}
-
-User <|-- Traveler
-User <|-- AdventureProvider
+' Generalization (inheritance)
+User <|-- Traveler : <<virtual>>
+User <|-- AdventureProvider : <<virtual>>
 User <|-- Admin
+Admin <|-- SuperAdmin
+Traveler <|-- TravelerProvider
+AdventureProvider <|-- TravelerProvider
 
-AdventureProvider "1" -- "0..*" Trip    : lists >
-Traveler          "1" -- "0..*" Booking : makes >
-Trip              "1" -- "0..*" Booking : has >
-Booking           "1" *-- "1"  Payment  : paid by >
+' Composition (filled diamond): the part lives and dies with the whole
+Traveler *-- "1" EmergencyContact : has >
+Booking "1" *-- "1" Payment : paid by >
+
+' Aggregation (hollow diamond): Traveler keeps pointers to its bookings,
+' but does not own them (they are deleted elsewhere)
+Traveler "1" o-- "0..*" Booking : makes >
+
+' Association with multiplicity
+Booking "0..*" --> "1" Trip : for >
+
+' Dependency (dashed arrow): uses the other class, does not store it
+AdventureProvider ..> Trip : <<create>>
 Payment ..> PaymentGateway : uses >
+Receipt ..> Booking : made from >
+Admin ..> Trip : <<friend>>
+
+' Enums used as attribute types
+Trip ..> FitnessLevel
+Trip ..> TripStatus
+Booking ..> BookingStatus
+Payment ..> PaymentStatus
+
+' ============================ NOTES ============================
+
+note right of User
+  **Abstract class:** getRole() is pure
+  virtual (= 0), so no plain User object
+  can be created.
+end note
+
+note bottom of TravelerProvider
+  **Diamond problem:** User is reached through
+  Traveler AND AdventureProvider. Both inherit
+  User **virtually**, so TravelerProvider has
+  only ONE User part.
+end note
+
+note bottom of Trip
+  **Friend functions** (not members, so not listed above):
+  operator<< and operator>> (input/output),
+  operator== (compares two trips by tripId).
+  Every class also has a friend operator<<.
+end note
 
 @enduml
