@@ -2,16 +2,18 @@
 //  Traveler.h  -  a person who BOOKS trips
 // =====================================================================
 //  Parent: User.   Child: TravelerProvider (see TravelerProvider.h)
+//  Menu:   TravelerMenu.h
 //
 //  OOP topics in this file:
 //    [Single inheritance]  Traveler -> User
 //    [Virtual inheritance] 'virtual public User' (needed by TravelerProvider)
 //    [Constructors in inheritance]  [Function overriding]
+//    [Virtual functions]  maxSeatsPerBooking() - a rule that changes by user type
 //    [Nested class]  EmergencyContact
 //    [Default arguments in constructor]  EmergencyContact(string n = "", string p = "")
 //    [Composition]  the EmergencyContact object lives inside the Traveler
 //    [Aggregation]  keeps pointers to its bookings, but does not own them
-//    [Function prototype]  bookTrip(), cancelBooking(), viewMyBookings()
+//    [Function prototype]  bookTrip(), cancelBooking(), viewMyBookings(), showMenu()
 //    [Default arguments in functions]  viewMyBookings(bool onlyConfirmed = false)
 //    [Returning objects from functions]  getEmergencyContact()
 // =====================================================================
@@ -22,7 +24,7 @@
 #include "User.h"
 #include "Trip.h"
 
-// Forward declarations: Traveler only stores POINTERS to these,
+// Forward declarations: Traveler only uses POINTERS / references to these,
 // so the full classes are not needed in this file.
 class Booking;
 class PaymentGateway;
@@ -54,7 +56,7 @@ private:
     FitnessLevel fitnessLevel;
 
     // [Aggregation] pointers to this traveler's bookings.
-    // The Traveler does NOT own them (main() deletes them); it only keeps a list.
+    // The Traveler does NOT own them (the BookingSystem deletes them); it only keeps a list.
     vector<Booking*> myBookings;
 
 public:
@@ -73,9 +75,35 @@ public:
     // [Function overriding] fills in User's pure virtual getRole()
     string getRole() const override { return "Traveler"; }
 
-    // [Function prototype] only the DECLARATION is here. The bodies are written
-    // at the bottom of Booking.h, because they create and use Booking objects,
-    // and the full Booking class is only known there.
+    // [Virtual functions] a RULE that is different for different kinds of traveler.
+    // A normal traveler may book at most 6 seats at once.
+    // TravelerProvider overrides this (a group leader may book more).
+    virtual int maxSeatsPerBooking() const { return 6; }
+
+    // UC-01 step 4 / alternate flow 4a: can this traveler book that many seats?
+    // Prints the reason when the answer is no.
+    bool canBook(const Trip& trip, int seats) const {
+        if (seats < 1) {
+            cout << "Number of seats must be at least 1.\n";
+            return false;
+        }
+        if (seats > trip.getAvailableSlots()) {
+            cout << "Only " << trip.getAvailableSlots() << " seat(s) left. Enter a smaller number.\n";
+            return false;
+        }
+        // [Run-time polymorphism] maxSeatsPerBooking() is virtual, so for a
+        // TravelerProvider its own (bigger) limit is used here
+        if (seats > maxSeatsPerBooking()) {
+            cout << "A " << getRole() << " can book at most " << maxSeatsPerBooking()
+                 << " seats at once.\n";
+            return false;
+        }
+        return true;
+    }
+
+    // [Function prototype] only the DECLARATIONS are here. The bodies of these
+    // three are at the bottom of Booking.h, because they create and use Booking
+    // objects, and the full Booking class is only known there.
     Booking* bookTrip(Trip& trip, int seats, const PaymentGateway& gateway,
                       const string& cardNo, const string& expiry,
                       const string& today);                          // UC-01 Book Adventure
@@ -86,6 +114,9 @@ public:
     //   viewMyBookings()      -> shows ALL bookings      (onlyConfirmed = false)
     //   viewMyBookings(true)  -> shows only CONFIRMED ones
     void viewMyBookings(bool onlyConfirmed = false) const;
+
+    // [Function overriding] the traveler's own menu. Body: TravelerMenu.h
+    void showMenu(BookingSystem& system) override;
 
     // [Friend function] + [Stream operator overloading]
     friend ostream& operator<<(ostream& out, const Traveler& t);

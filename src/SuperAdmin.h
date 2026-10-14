@@ -2,6 +2,7 @@
 //  SuperAdmin.h  -  the owner of the whole platform
 // =====================================================================
 //  Can do everything an Admin can, plus see system-wide statistics.
+//  Menu: AdminMenu.h
 //
 //  OOP topics in this file:
 //    [Multilevel inheritance]  User -> Admin -> SuperAdmin
@@ -42,9 +43,12 @@ public:
     // [Function overriding]
     string getRole() const override { return "SuperAdmin"; }
 
+    // [Function overriding] the super admin's own menu. Body: AdminMenu.h
+    void showMenu(BookingSystem& system) override;
+
     // Asks for the password again before showing the numbers.
     // [Protected member] validatePassword() is protected in User, so a child
-    // (even a grandchild like SuperAdmin) can call it, but main() cannot.
+    // (even a grandchild like SuperAdmin) can call it, but outside code cannot.
     void viewSystemStats(const string& password) const {
         if (!validatePassword(password)) {
             cout << "Wrong password. Stats not shown.\n";

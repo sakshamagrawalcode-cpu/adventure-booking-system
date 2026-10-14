@@ -1,8 +1,9 @@
 // =====================================================================
 //  TravelerProvider.h  -  someone who LISTS trips AND BOOKS trips
 // =====================================================================
-//  Example: a trek leader who runs his own treks, and on weekends books
-//  other companies' trips as a normal traveler.
+//  Example: a trek leader who runs his own treks, and also books other
+//  companies' trips for his group.
+//  Menu: StartMenu.h (lets them pick the traveler or the provider menu)
 //
 //  OOP topics in this file:
 //    [Multiple inheritance]  two parents: Traveler and AdventureProvider
@@ -11,8 +12,9 @@
 //    [Virtual inheritance]   ...but the parents use 'virtual public User',
 //                            so there is only ONE User part
 //    [Hybrid inheritance]    hierarchical (User -> 3 children) + multiple (this class)
-//    [Ambiguity in multiple inheritance]  both parents have getRole()
+//    [Ambiguity in multiple inheritance]  both parents have getRole() and showMenu()
 //    [Constructor execution order]  User, Traveler, AdventureProvider, TravelerProvider
+//    [Function overriding]  maxSeatsPerBooking() - a bigger limit for group leaders
 //    [final]
 // =====================================================================
 #ifndef TRAVELERPROVIDER_H
@@ -56,6 +58,14 @@ public:
     string getRole() const override {
         return Traveler::getRole() + " + " + AdventureProvider::getRole();
     }
+
+    // Same ambiguity for showMenu(): this menu lets the user pick which
+    // parent's menu to open. Body: StartMenu.h
+    void showMenu(BookingSystem& system) override;
+
+    // [Function overriding] a group leader books for the whole group,
+    // so the limit is bigger than a normal traveler's 6 seats
+    int maxSeatsPerBooking() const override { return 15; }
 
     // The same ambiguity happens with cout:  cout << karan;  is an ERROR,
     // because both parents have their own operator<<.

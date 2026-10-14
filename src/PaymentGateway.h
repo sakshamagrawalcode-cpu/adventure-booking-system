@@ -45,6 +45,8 @@ public:
         this->failMode = failMode;
     }
 
+    bool isFailing() const { return failMode; }
+
     // Card number must be 16 digits, expiry must look like MM/YY
     bool validateDetails(const string& cardNo, const string& expiry) const {
         if (cardNo.length() != 16) return false;

@@ -142,15 +142,8 @@ inline ostream& operator<<(ostream& out, const Booking& b) {
 inline Booking* Traveler::bookTrip(Trip& trip, int seats, const PaymentGateway& gateway,
                                    const string& cardNo, const string& expiry,
                                    const string& today) {
-    // Step 4 / 4a: check that many seats are still free
-    if (seats <= 0) {
-        cout << "Number of seats must be at least 1.\n";
-        return nullptr;
-    }
-    if (seats > trip.getAvailableSlots()) {
-        cout << "Only " << trip.getAvailableSlots() << " seat(s) left. Enter a smaller number.\n";
-        return nullptr;
-    }
+    // Step 4 / 4a: are that many seats free, and allowed for this traveler?
+    if (!canBook(trip, seats)) return nullptr;
 
     // Steps 5-6: pay first
     Payment payment(trip.getPrice() * seats, today);
@@ -161,7 +154,8 @@ inline Booking* Traveler::bookTrip(Trip& trip, int seats, const PaymentGateway& 
 
     // Step 7: only now is the booking created.
     // [Dynamic memory allocation] 'new' makes the Booking on the heap and gives
-    // back its address. It stays alive until someone calls 'delete' (main() does).
+    // back its address. It stays alive until someone calls 'delete'
+    // (BookingSystem's destructor does it, or the end of demo.cpp).
     // [this pointer] 'this' = the address of the Traveler who called bookTrip()
     Booking* booking = new Booking(this, &trip, seats, today, payment);
     myBookings.push_back(booking);

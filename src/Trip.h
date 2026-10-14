@@ -7,6 +7,7 @@
 //    [Encapsulation]  [Default constructor]  [Parameterized constructor]
 //    [Constructor overloading]  [Static data member]  [Static member function]
 //    [Inline function]  [Function overloading]
+//    [Interface] follows Searchable
 //    [Unary operator overloading]   ++trip
 //    [Binary operator overloading]  trip1 < trip2 (member), trip1 == trip2 (friend)
 //    [Friend function]  [Stream operator overloading]  <<  >>
@@ -17,6 +18,7 @@
 
 #include <iostream>
 #include <string>
+#include "Searchable.h"
 using namespace std;
 
 enum FitnessLevel { LOW, MODERATE, HIGH };
@@ -40,11 +42,25 @@ inline string toString(TripStatus s) {
     return "CLOSED";
 }
 
-class Trip {
+// true if the text looks like a date "YYYY-MM-DD", e.g. 2026-11-12.
+// Dates in this form can be compared like normal strings: "2026-11-12" < "2026-12-01"
+inline bool looksLikeDate(const string& d) {
+    if (d.length() != 10 || d[4] != '-' || d[7] != '-') return false;
+    for (int i = 0; i < 10; i++) {
+        if (i == 4 || i == 7) continue;
+        if (d[i] < '0' || d[i] > '9') return false;
+    }
+    int month = (d[5] - '0') * 10 + (d[6] - '0');
+    int day = (d[8] - '0') * 10 + (d[9] - '0');
+    return month >= 1 && month <= 12 && day >= 1 && day <= 31;
+}
+
+class Trip : public Searchable {
 private:
     // [Encapsulation] seat numbers are private. They change ONLY through
     // reserveSlots() / releaseSlots(), so they can never go wrong.
     string tripId;
+    string providerId;       // the user ID of the provider who created this trip
     string title;
     string location;
     double price;
@@ -87,6 +103,19 @@ public:
         assignNewId();
     }
 
+    // UC-03 step 4 / alternate flow 4a: checks every detail.
+    // Returns "" when everything is fine, otherwise WHAT is wrong.
+    string checkDetails(const string& today) const {
+        if (title == "" || location == "") return "Trip name and place can not be empty.";
+        if (price <= 0) return "Price must be above 0.";
+        if (maxCapacity <= 0) return "Total seats must be above 0.";
+        if (minAge < 0) return "Minimum age can not be negative.";
+        if (!looksLikeDate(startDate) || !looksLikeDate(endDate)) return "Dates must look like YYYY-MM-DD.";
+        if (startDate <= today) return "Start date must be in the future.";
+        if (endDate < startDate) return "End date can not be before the start date.";
+        return "";
+    }
+
     bool reserveSlots(int count) {
         if (!hasCapacityFor(count)) return false;
         availableSlots -= count;
@@ -100,15 +129,41 @@ public:
 
     void publish() { status = PUBLISHED; }
 
+    // A removed trip is kept as CLOSED, not erased, so its record stays
+    void close() { status = CLOSED; }
+
+    void changePrice(double newPrice) { price = newPrice; }
+
+    void changeDates(const string& newStart, const string& newEnd) {
+        startDate = newStart;
+        endDate = newEnd;
+    }
+
     // UC-03 alternate flow 2a: seats are taken only by CONFIRMED bookings,
     // so "all seats free" means "no confirmed bookings" -> safe to remove
     bool canBeRemoved() const { return availableSlots == maxCapacity; }
 
+    // [Interface] Searchable: a trip matches if the keyword is in its name or place
+    bool matches(const string& keyword) const override {
+        return containsIgnoreCase(title, keyword) || containsIgnoreCase(location, keyword);
+    }
+
+    // One short line, used in lists
+    void printRow() const {
+        cout << "  " << tripId << " | " << title << " | " << location
+             << " | " << startDate << " | Rs. " << price
+             << " | seats left " << availableSlots << " | " << toString(status) << "\n";
+    }
+
     string getTripId() const { return tripId; }
+    string getProviderId() const { return providerId; }
+    void setProviderId(const string& id) { providerId = id; }
     string getTitle() const { return title; }
     double getPrice() const { return price; }
     string getStartDate() const { return startDate; }
+    string getEndDate() const { return endDate; }
     int getAvailableSlots() const { return availableSlots; }
+    TripStatus getStatus() const { return status; }
 
     // [Static member function]
     static int getTripCount() { return tripCount; }
@@ -138,7 +193,7 @@ public:
     friend istream& operator>>(istream& in, Trip& t);
 
     // [Friend class] ALL functions of Admin may use Trip's private members.
-    // (Admin::removeTrip() changes 'status' directly - see Admin.h)
+    // (Admin::removeTrip() and Admin::tripReport() read them directly - see Admin.h)
     friend class Admin;
 };
 

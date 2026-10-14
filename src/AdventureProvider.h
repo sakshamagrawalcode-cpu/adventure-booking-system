@@ -2,6 +2,7 @@
 //  AdventureProvider.h  -  a company that CREATES and lists trips
 // =====================================================================
 //  Parent: User.   Child: TravelerProvider (see TravelerProvider.h)
+//  Menu:   ProviderMenu.h
 //
 //  OOP topics in this file:
 //    [Single inheritance]  AdventureProvider -> User
@@ -40,13 +41,38 @@ public:
     // and gives the whole object back to the caller
     Trip createTrip(string title, string location, double price,
                     string start, string end, int cap, int minAge, FitnessLevel fit) {
-        return Trip(title, location, price, start, end, cap, minAge, fit);
+        Trip trip(title, location, price, start, end, cap, minAge, fit);
+        trip.setProviderId(getUserId());   // remember who created it
+        return trip;
     }
 
     void publishTrip(Trip& t) { t.publish(); }
 
+    // UC-03: the provider removes one of their own trips (the menu checks it is theirs).
+    // Alternate flow 2a: blocked while there are confirmed bookings,
+    // so no traveler loses a trip silently.
+    bool removeTrip(Trip& trip) {
+        if (trip.getStatus() == CLOSED) {
+            cout << "This trip is already removed.\n";
+            return false;
+        }
+        if (!trip.canBeRemoved()) {
+            cout << "Cannot remove '" << trip.getTitle()
+                 << "': it has confirmed bookings. Deal with those bookings first.\n";
+            return false;
+        }
+        trip.close();
+        cout << "'" << trip.getTitle() << "' removed (status CLOSED).\n";
+        return true;
+    }
+
+    string getAgencyName() const { return agencyName; }
+
     // [Function overriding] fills in User's pure virtual getRole()
     string getRole() const override { return "AdventureProvider"; }
+
+    // [Function overriding] the provider's own menu. Body: ProviderMenu.h
+    void showMenu(BookingSystem& system) override;
 
     // [Friend function] + [Stream operator overloading]
     friend ostream& operator<<(ostream& out, const AdventureProvider& p);

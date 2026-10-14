@@ -9,6 +9,7 @@
 //    [Abstract class]  [Pure virtual function]  [Virtual destructor]
 //    [Parameterized constructor]  [Copy constructor]
 //    [Static data member]  [Static member function]  [Protected member]
+//    [Interface] follows Searchable
 //    [Friend function]  [Stream operator overloading]
 // =====================================================================
 #ifndef USER_H
@@ -16,11 +17,16 @@
 
 #include <iostream>
 #include <string>
+#include "Searchable.h"
 using namespace std;
 
-// [Abstract class] User has a pure virtual function (getRole() = 0),
+// Forward declaration: showMenu() only needs a reference to the system,
+// so the full BookingSystem class is not needed in this file.
+class BookingSystem;
+
+// [Abstract class] User has pure virtual functions (getRole() and showMenu()),
 // so a plain User object can NOT be created. Only its children can be.
-class User {
+class User : public Searchable {
 // [Access specifiers]
 //   private   -> only User's own functions can use it
 //   protected -> User AND its child classes can use it
@@ -39,10 +45,10 @@ private:
 
 protected:
     // [Static data member] when true, each class's constructor prints its name.
-    // main() turns it on to show the [Constructor execution order].
+    // demo.cpp turns it on to show the [Constructor execution order].
     static bool showConstructorCalls;
 
-    // [Protected member] child classes can call these two, main() cannot.
+    // [Protected member] child classes can call these two, outside code cannot.
     static void traceConstructor(const string& className) {
         if (showConstructorCalls) {
             cout << "   " << className << " constructor runs\n";
@@ -64,7 +70,7 @@ public:
     // [Copy constructor] runs when a user object is copied,
     // e.g.  Traveler copy = aarav;   The copy is one more user, so count it.
     User(const User& other)
-        : userId(other.userId), name(other.name), email(other.email),
+        : Searchable(other), userId(other.userId), name(other.name), email(other.email),
           password(other.password), phone(other.phone) {
         totalUsers++;
     }
@@ -76,17 +82,33 @@ public:
     }
 
     // [Pure virtual function] "= 0" means User gives NO body here.
-    // Every child class MUST write its own getRole().
+    // Every child class MUST write its own version.
     virtual string getRole() const = 0;
+
+    // [Pure virtual function] every kind of user has its OWN menu.
+    // The bodies are in TravelerMenu.h, ProviderMenu.h, AdminMenu.h, StartMenu.h
+    virtual void showMenu(BookingSystem& system) = 0;
+
+    // [Interface] Searchable: a user matches if the keyword is in the name or email
+    bool matches(const string& keyword) const override {
+        return containsIgnoreCase(name, keyword) || containsIgnoreCase(email, keyword);
+    }
 
     // [Encapsulation] password is private, so this is the only way to check it
     bool login(const string& e, const string& pass) const {
         return e == email && validatePassword(pass);
     }
 
+    // An empty value means "keep the old one"
+    void updateProfile(const string& newName, const string& newPhone) {
+        if (newName != "") name = newName;
+        if (newPhone != "") phone = newPhone;
+    }
+
     string getUserId() const { return userId; }
     string getName() const { return name; }
     string getEmail() const { return email; }
+    string getPhone() const { return phone; }
 
     // [Static member function] called on the class itself: User::getTotalUsers()
     static int getTotalUsers() { return totalUsers; }
