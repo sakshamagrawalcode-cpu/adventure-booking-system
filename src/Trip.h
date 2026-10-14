@@ -99,7 +99,7 @@ public:
     friend istream& operator>>(istream& in, Trip& t);
 };
 
-int Trip::tripCount = 0;
+inline int Trip::tripCount = 0;
 
 inline ostream& operator<<(ostream& out, const Trip& t) {
     out << "Trip ID   : " << t.tripId << "\n"
@@ -121,6 +121,7 @@ inline istream& operator>>(istream& in, Trip& t) {
     getline(in >> ws, t.location);
     int fit;
     in >> t.price >> t.startDate >> t.endDate >> t.maxCapacity >> t.minAge >> fit;
+    if (fit < 0 || fit > 2) fit = 0;   // anything other than 0/1/2 becomes LOW
     t.requiredFitness = static_cast<FitnessLevel>(fit);
     t.availableSlots = t.maxCapacity;
     return in;

@@ -101,7 +101,7 @@ public:
     friend ostream& operator<<(ostream& out, const Booking& b);
 };
 
-int Booking::bookingCount = 0;
+inline int Booking::bookingCount = 0;
 
 inline ostream& operator<<(ostream& out, const Booking& b) {
     out << "Booking ID : " << b.bookingId << "\n"
@@ -128,7 +128,11 @@ inline Booking* Traveler::bookTrip(Trip& trip, int seats, const PaymentGateway& 
                                    const string& cardNo, const string& expiry,
                                    const string& today) {
     // Step 4 / 4a: check that many seats are still free
-    if (seats <= 0 || seats > trip.getAvailableSlots()) {
+    if (seats <= 0) {
+        cout << "Number of seats must be at least 1.\n";
+        return nullptr;
+    }
+    if (seats > trip.getAvailableSlots()) {
         cout << "Only " << trip.getAvailableSlots() << " seat(s) left. Enter a smaller number.\n";
         return nullptr;
     }

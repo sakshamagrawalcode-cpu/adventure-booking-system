@@ -58,7 +58,7 @@ public:
     friend ostream& operator<<(ostream& out, const Payment& p);
 };
 
-int Payment::paymentCount = 0;
+inline int Payment::paymentCount = 0;
 
 inline ostream& operator<<(ostream& out, const Payment& p) {
     out << p.paymentId << " | Rs. " << p.amount << " | " << toString(p.status)

@@ -64,8 +64,10 @@ public:
     friend ostream& operator<<(ostream& out, const User& u);
 };
 
-// Static variable definition (memory is allocated here, outside the class)
-int User::totalUsers = 0;
+// Static variable definition (memory is allocated here, outside the class).
+// 'inline' lets this header be included from more than one .cpp file
+// without a "multiple definition" linker error.
+inline int User::totalUsers = 0;
 
 inline ostream& operator<<(ostream& out, const User& u) {
     out << "User ID : " << u.userId << "\n"
