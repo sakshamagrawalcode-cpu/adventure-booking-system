@@ -1,0 +1,8 @@
+# Programs built by g++. They are made from the source code,
+# so they are not saved in Git.
+*.exe
+*.o
+*.out
+src/customer
+src/provider
+src/admin
