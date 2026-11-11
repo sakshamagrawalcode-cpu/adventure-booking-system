@@ -6,3 +6,7 @@
 src/customer
 src/provider
 src/admin
+
+# The data files are made by the programs on their first run,
+# so every copy of the project starts from the sample data.
+data/*.txt

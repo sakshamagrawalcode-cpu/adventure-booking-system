@@ -9,8 +9,12 @@
 string loginScreen(BookingSystem& app) {
     cout << "\n===== PROVIDER LOGIN =====\n";
     while (true) {
-        string email = readLine("Email    : ");
-        string password = readLine("Password : ");
+        string email = readLine("Email (0 = exit) : ");
+        if (email == "0") {
+            cout << "Goodbye!\n";
+            exit(0);
+        }
+        string password = readLine("Password         : ");
         try {
             Provider p = app.loginProvider(email, password);
             cout << "\nWelcome, " << p.getName() << " (" << p.getCompanyName() << ")!\n";
@@ -134,12 +138,12 @@ void bookersScreen(BookingSystem& app, string providerId) {
     if (pick == 0) return;
     Adventure a = list[pick - 1];
 
-    vector<Booking> bookings = app.getBookingsOfAdventure(a.getId());
+    // true = only active bookings (cancelled ones are left out)
+    vector<Booking> bookings = app.getBookingsOfAdventure(a.getId(), true);
     cout << "\nBookings for " << a.getName() << ":\n";
 
     int shown = 0;
     for (int i = 0; i < (int)bookings.size(); i++) {
-        if (bookings[i].isCancelled()) continue;   // skip cancelled ones
 
         Customer c = app.getCustomer(bookings[i].getCustomerId());
         shown++;
@@ -184,12 +188,22 @@ void providerMenu(BookingSystem& app, string providerId) {
 }
 
 int main() {
-    BookingSystem app;   // holds all the sample data
+    try {
+        BookingSystem app;   // reads the shared data from the data folder
 
-    // After logout, go back to the login screen
-    while (true) {
-        string providerId = loginScreen(app);
-        providerMenu(app, providerId);
+        // After logout, go back to the login screen
+        while (true) {
+            string providerId = loginScreen(app);
+            providerMenu(app, providerId);
+        }
+    } catch (runtime_error& e) {
+        // A problem with the data files, e.g. the data folder was not found
+        cout << "\nError: " << e.what() << "\n";
+        return 1;
+    } catch (exception& e) {
+        // Any other error we did not expect (multiple catch: the most specific comes first)
+        cout << "\nUnexpected error: " << e.what() << "\n";
+        return 1;
     }
     return 0;
 }

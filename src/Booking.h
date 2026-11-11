@@ -16,6 +16,10 @@ struct Ticket {
 };
 
 class Booking {
+public:
+    // Static data member: one value shared by the whole class, not one per object
+    static const int MAX_TICKETS = 20;
+
 private:
     string id;
     string customerId;     // who booked
@@ -34,6 +38,29 @@ public:
         this->tickets = tickets;
         this->totalPrice = totalPrice;
         this->status = "BOOKED";
+    }
+
+    // Copy constructor: makes a new Booking with the same values as another one.
+    // It runs every time a booking is copied, e.g. when a vector<Booking> is returned.
+    // (C++ would make the same one automatically; it is written here to show how it works.)
+    Booking(const Booking& other) {
+        id = other.id;
+        customerId = other.customerId;
+        adventureId = other.adventureId;
+        tickets = other.tickets;
+        totalPrice = other.totalPrice;
+        status = other.status;
+    }
+
+    // Copy assignment (b1 = b2): needed because we wrote our own copy constructor
+    Booking& operator=(const Booking& other) {
+        id = other.id;
+        customerId = other.customerId;
+        adventureId = other.adventureId;
+        tickets = other.tickets;
+        totalPrice = other.totalPrice;
+        status = other.status;
+        return *this;
     }
 
     // Getters
@@ -61,14 +88,16 @@ public:
         status = "CANCELLED";
     }
 
-    // Prints status, tickets and total (the menu prints the adventure name)
-    void show() {
-        cout << "Status  : " << status << "\n";
-        cout << "Tickets : " << getTicketCount() << "\n";
-        for (int i = 0; i < getTicketCount(); i++) {
-            cout << "   " << (i + 1) << ". " << tickets[i].name
-                 << " (age " << tickets[i].age << ")\n";
+    // Stream operator overloading: prints status, tickets and total with  cout << booking;
+    // (the menu prints the adventure name). It is a friend, so it reads private data.
+    friend ostream& operator<<(ostream& out, const Booking& b) {
+        out << "Status  : " << b.status << "\n";
+        out << "Tickets : " << b.tickets.size() << "\n";
+        for (int i = 0; i < (int)b.tickets.size(); i++) {
+            out << "   " << (i + 1) << ". " << b.tickets[i].name
+                << " (age " << b.tickets[i].age << ")\n";
         }
-        cout << "Total   : Rs. " << totalPrice << "\n";
+        out << "Total   : Rs. " << b.totalPrice << "\n";
+        return out;
     }
 };

@@ -18,10 +18,14 @@ string readLine(string prompt) {
             cout << "\nInput ended. Exiting.\n";
             exit(0);
         }
-        if (line != "") {
+        if (line == "") {
+            cout << "This cannot be empty.\n";
+        } else if (line.find('|') != string::npos) {
+            // '|' separates the fields in the data files, so it can't be inside a value
+            cout << "The character | can't be used.\n";
+        } else {
             return line;
         }
-        cout << "This cannot be empty.\n";
     }
 }
 

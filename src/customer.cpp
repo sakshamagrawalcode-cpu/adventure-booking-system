@@ -9,8 +9,12 @@
 string loginScreen(BookingSystem& app) {
     cout << "\n===== CUSTOMER LOGIN =====\n";
     while (true) {
-        string email = readLine("Email    : ");
-        string password = readLine("Password : ");
+        string email = readLine("Email (0 = exit) : ");
+        if (email == "0") {
+            cout << "Goodbye!\n";
+            exit(0);
+        }
+        string password = readLine("Password         : ");
         try {
             Customer c = app.loginCustomer(email, password);
             cout << "\nWelcome, " << c.getName() << "!\n";
@@ -23,7 +27,8 @@ string loginScreen(BookingSystem& app) {
 
 // Asks for tickets (name and age of each person) and books the adventure
 void bookScreen(BookingSystem& app, string customerId, Adventure adventure) {
-    int count = readIntInRange("How many tickets? (1-20): ", 1, 20);
+    int max = Booking::MAX_TICKETS;   // static member: same for every booking
+    int count = readIntInRange("How many tickets? (1-" + to_string(max) + "): ", 1, max);
 
     vector<Ticket> tickets;
     for (int i = 1; i <= count; i++) {
@@ -61,7 +66,7 @@ void showAdventures(BookingSystem& app, string customerId) {
 
     Adventure chosen = list[choice - 1];
     cout << "\n";
-    chosen.show();
+    cout << chosen;   // uses the overloaded << operator
 
     int answer = readIntInRange("\nBook this? (1 = Yes, 0 = No): ", 0, 1);
     if (answer == 1) {
@@ -81,21 +86,14 @@ void myBookings(BookingSystem& app, string customerId) {
     for (int i = 0; i < (int)list.size(); i++) {
         Adventure a = app.getAdventure(list[i].getAdventureId());
         cout << "\n" << (i + 1) << ". " << a.getName() << " (" << a.getDate() << ")\n";
-        list[i].show();
+        cout << list[i];
     }
 }
 
 // Lists only the BOOKED bookings and cancels the chosen one
 void cancelScreen(BookingSystem& app, string customerId) {
-    vector<Booking> all = app.getBookingsOfCustomer(customerId);
-
-    // Keep only the bookings that are not cancelled yet
-    vector<Booking> active;
-    for (int i = 0; i < (int)all.size(); i++) {
-        if (!all[i].isCancelled()) {
-            active.push_back(all[i]);
-        }
-    }
+    // true = only the bookings that are still BOOKED
+    vector<Booking> active = app.getBookingsOfCustomer(customerId, true);
 
     cout << "\n===== CANCEL A BOOKING =====\n";
     if (active.size() == 0) {
@@ -114,7 +112,7 @@ void cancelScreen(BookingSystem& app, string customerId) {
 
     Booking chosen = active[choice - 1];
     try {
-        app.cancelBooking(chosen.getId());
+        app.cancelBooking(chosen.getId(), customerId);   // customer version: checks it is theirs
         cout << "Cancelled. Refunded Rs. " << chosen.getTotalPrice() << "\n";
     } catch (runtime_error& e) {
         cout << "Could not cancel: " << e.what() << "\n";
@@ -185,12 +183,22 @@ void customerMenu(BookingSystem& app, string customerId) {
 }
 
 int main() {
-    BookingSystem app;   // holds all the sample data
+    try {
+        BookingSystem app;   // reads the shared data from the data folder
 
-    // After logout, go back to the login screen
-    while (true) {
-        string customerId = loginScreen(app);
-        customerMenu(app, customerId);
+        // After logout, go back to the login screen
+        while (true) {
+            string customerId = loginScreen(app);
+            customerMenu(app, customerId);
+        }
+    } catch (runtime_error& e) {
+        // A problem with the data files, e.g. the data folder was not found
+        cout << "\nError: " << e.what() << "\n";
+        return 1;
+    } catch (exception& e) {
+        // Any other error we did not expect (multiple catch: the most specific comes first)
+        cout << "\nUnexpected error: " << e.what() << "\n";
+        return 1;
     }
     return 0;
 }

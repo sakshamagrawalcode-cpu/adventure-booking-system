@@ -18,6 +18,12 @@ private:
     string email;
     string password;
 
+    // Only BookingSystem may read the password (to save it in the data file).
+    // It can, because it is a friend class (see below). Menus can't.
+    string getPassword() { return password; }
+
+    friend class BookingSystem;
+
 public:
     // Constructor: sets the 4 common fields
     User(string id, string name, string email, string password) {

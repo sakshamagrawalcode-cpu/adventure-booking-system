@@ -39,6 +39,17 @@ public:
         this->seatsLeft = totalSeats;
     }
 
+    // Overloaded constructor: also sets seatsLeft.
+    // Used when an adventure is read back from the data file.
+    // It first runs the constructor above, then changes seatsLeft.
+    Adventure(string id, string providerId, string name, string location,
+              string description, string difficulty, int minAge,
+              string date, int price, int totalSeats, int seatsLeft)
+        : Adventure(id, providerId, name, location, description,
+                    difficulty, minAge, date, price, totalSeats) {
+        this->seatsLeft = seatsLeft;
+    }
+
     // Getters
     string getId()          { return id; }
     string getProviderId()  { return providerId; }
@@ -79,15 +90,17 @@ public:
         seatsLeft = seatsLeft + n;
     }
 
-    // Prints all details
-    void show() {
-        cout << "Name        : " << name << "\n";
-        cout << "Location    : " << location << "\n";
-        cout << "Date        : " << date << "\n";
-        cout << "Difficulty  : " << difficulty << "\n";
-        cout << "Min age     : " << minAge << "\n";
-        cout << "Price       : Rs. " << price << " per person\n";
-        cout << "Seats left  : " << seatsLeft << " of " << totalSeats << "\n";
-        cout << "About       : " << description << "\n";
+    // Stream operator overloading: lets us print an adventure with  cout << adventure;
+    // It is a friend function, so it can read the private data directly.
+    friend ostream& operator<<(ostream& out, const Adventure& a) {
+        out << "Name        : " << a.name << "\n";
+        out << "Location    : " << a.location << "\n";
+        out << "Date        : " << a.date << "\n";
+        out << "Difficulty  : " << a.difficulty << "\n";
+        out << "Min age     : " << a.minAge << "\n";
+        out << "Price       : Rs. " << a.price << " per person\n";
+        out << "Seats left  : " << a.seatsLeft << " of " << a.totalSeats << "\n";
+        out << "About       : " << a.description << "\n";
+        return out;
     }
 };

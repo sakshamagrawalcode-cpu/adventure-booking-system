@@ -9,8 +9,12 @@
 void loginScreen(BookingSystem& app) {
     cout << "\n===== ADMIN LOGIN =====\n";
     while (true) {
-        string email = readLine("Email    : ");
-        string password = readLine("Password : ");
+        string email = readLine("Email (0 = exit) : ");
+        if (email == "0") {
+            cout << "Goodbye!\n";
+            exit(0);
+        }
+        string password = readLine("Password         : ");
         try {
             Admin a = app.loginAdmin(email, password);
             cout << "\nWelcome, " << a.getName() << "!\n";
@@ -116,7 +120,7 @@ void showAllBookings(BookingSystem& app) {
         cout << "-- Booked by --\n";
         c.showProfile();
         cout << "-- Booking --\n";
-        list[i].show();
+        cout << list[i];
     }
 }
 
@@ -137,15 +141,8 @@ void showSeats(BookingSystem& app) {
 
 // Lists the BOOKED bookings of every customer and cancels the chosen one
 void cancelAnyBooking(BookingSystem& app) {
-    vector<Booking> all = app.getAllBookings();
-
-    // Keep only the bookings that are not cancelled yet
-    vector<Booking> active;
-    for (int i = 0; i < (int)all.size(); i++) {
-        if (!all[i].isCancelled()) {
-            active.push_back(all[i]);
-        }
-    }
+    // true = only the bookings that are still BOOKED
+    vector<Booking> active = app.getAllBookings(true);
 
     cout << "\n===== CANCEL A BOOKING =====\n";
     if (active.size() == 0) {
@@ -312,12 +309,22 @@ void adminMenu(BookingSystem& app) {
 }
 
 int main() {
-    BookingSystem app;   // holds all the sample data
+    try {
+        BookingSystem app;   // reads the shared data from the data folder
 
-    // After logout, go back to the login screen
-    while (true) {
-        loginScreen(app);
-        adminMenu(app);
+        // After logout, go back to the login screen
+        while (true) {
+            loginScreen(app);
+            adminMenu(app);
+        }
+    } catch (runtime_error& e) {
+        // A problem with the data files, e.g. the data folder was not found
+        cout << "\nError: " << e.what() << "\n";
+        return 1;
+    } catch (exception& e) {
+        // Any other error we did not expect (multiple catch: the most specific comes first)
+        cout << "\nUnexpected error: " << e.what() << "\n";
+        return 1;
     }
     return 0;
 }

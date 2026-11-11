@@ -3,6 +3,10 @@
 What happens, step by step, when a customer books an adventure in `customer.cpp`.
 Time goes from top to bottom.
 
+![Sequence diagram](sequence-diagram.png)
+
+The picture above is made from the Mermaid code below. If you change the code, the picture must be made again.
+
 ```mermaid
 sequenceDiagram
     actor C as Customer
@@ -19,6 +23,7 @@ sequenceDiagram
     P-->>C: Ask how many tickets, then name and age of each person
     C->>P: tickets
     P->>S: book(customerId, adventureId, tickets)
+    S->>S: load() - read the latest data files
 
     loop for each ticket
         S->>A: isAgeAllowed(age)
@@ -36,6 +41,7 @@ sequenceDiagram
             P-->>C: Booking failed - Only 2 seats left
         else seats taken
             S->>B: create Booking (status BOOKED)
+            S->>S: save() - write the data files
             S-->>P: the new booking
             P-->>C: Booked! Total - Rs. 3000
         end
@@ -46,5 +52,7 @@ sequenceDiagram
 - Solid arrow = a function call. Dashed arrow = the answer coming back.
 - `loop` = repeated for each ticket.
 - `alt` / `else` = only one of the boxes happens, depending on the condition.
+- `load()` and `save()` are how the three programs share data: the booking is in the
+  files right away, so the provider and admin programs see it.
 - The two errors are `runtime_error`s thrown by `BookingSystem` and `Adventure`,
   and caught by the `try` / `catch` in `bookScreen()` in `customer.cpp`.
